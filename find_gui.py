@@ -14,6 +14,24 @@ ctk.set_default_color_theme("blue")
 IMAGE_EXTS = ('.jpg', '.jpeg', '.png', '.webp', '.bmp')
 
 
+def bundled_model_path():
+    if getattr(sys, 'frozen', False):
+        return os.path.join(sys._MEIPASS, 'buffalo_s')
+    return None
+
+
+def ensure_model():
+    model_dir = os.path.join(os.path.expanduser('~'), '.insightface', 'models', 'buffalo_s')
+    if os.path.isdir(model_dir) and os.listdir(model_dir):
+        return
+    src = bundled_model_path()
+    if src is None or not os.path.isdir(src):
+        return
+    os.makedirs(model_dir, exist_ok=True)
+    for f in os.listdir(src):
+        shutil.copy2(os.path.join(src, f), os.path.join(model_dir, f))
+
+
 class FaceFinderApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -204,6 +222,7 @@ class FaceFinderApp(ctk.CTk):
 
         # Load model
         self.after(0, lambda: self._set_status("Loading face model..."))
+        ensure_model()
         app = FaceAnalysis(name='buffalo_s', providers=['CPUExecutionProvider'])
         app.prepare(ctx_id=0, det_size=(640, 640))
 
